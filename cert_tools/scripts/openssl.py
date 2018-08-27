@@ -1,6 +1,11 @@
 import subprocess
 import os
 import uuid
+import ssl
+import socket
+
+## Generation
+
 
 def generate_private_key(strength):
     tempkey = '{}.key'.format(uuid.uuid4())
@@ -54,8 +59,15 @@ def verify_cert_key(cert, key):
     else:
         return False, certmd5, keymd5
 
-def convert_pem():
-    pass
+def check_cert(cert):
+    tempcert = '{}.crt'.format(uuid.uuid4())
+
+    with open('./temp/{}'.format(tempcert), "w") as f:
+        f.write(cert)
+
+    result =  ssl._ssl._test_decode_cert('./temp/{}'.format(tempcert))
+    os.remove('./temp/{}'.format(tempcert))
+    return result
 
 def generate_csr(*args, **kwargs):
     tempkey = str(str(random.randint(100000000000, 999999999999)) + '.key')
@@ -72,3 +84,24 @@ def generate_csr(*args, **kwargs):
     f = open(tempkey, 'r')
     os.remove(tempkey)
     return f.read()
+
+
+def remote_cert_content(domain):
+
+    context = ssl.SSLContext()
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = True
+    context.load_default_certs()
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ssl_sock = context.wrap_socket(s, server_hostname=domain)
+    ssl_sock.connect((domain, 443))
+    return ssl_sock.getpeercert(binary_form=False)
+
+def convert_pem():
+    pass
+
+
+
+def certificate_contents():
+    pass
